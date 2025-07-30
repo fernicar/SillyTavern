@@ -2282,6 +2282,11 @@ async function sendOpenAIRequest(type, messages, signal, { jsonSchema = null } =
     }
 
     if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
+        if (!webllmEngine) {
+            webllmEngine = new WebLLMEngineWrapper();
+        }
+        await webllmEngine.loadModel(oai_settings.webllm_model);
+
         delete generate_data.logprobs;
         delete generate_data.top_logprobs;
         delete generate_data.stop;
@@ -2291,13 +2296,7 @@ async function sendOpenAIRequest(type, messages, signal, { jsonSchema = null } =
         delete generate_data.frequency_penalty;
         delete generate_data.presence_penalty;
 
-        return async function* streamData() {
-            if (!webllmEngine) {
-                webllmEngine = new WebLLMEngineWrapper();
-            }
-            await webllmEngine.loadModel(oai_settings.webllm_model);
-            yield* webllmEngine.generateChatStream(messages, generate_data);
-        }
+        return webllmEngine.generateChatStream(messages, generate_data);
     }
 
     if (jsonSchema) {

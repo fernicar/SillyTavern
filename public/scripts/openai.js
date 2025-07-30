@@ -73,6 +73,7 @@ import { SlashCommandEnumValue } from './slash-commands/SlashCommandEnumValue.js
 import { callGenericPopup, Popup, POPUP_RESULT, POPUP_TYPE } from './popup.js';
 import { t } from './i18n.js';
 import { ToolManager } from './tool-calling.js';
+import { WebLLMEngineWrapper } from './webllm.js';
 import { accountStorage } from './util/AccountStorage.js';
 import { IGNORE_SYMBOL } from './constants.js';
 
@@ -184,6 +185,7 @@ export const chat_completion_sources = {
     AIMLAPI: 'aimlapi',
     XAI: 'xai',
     POLLINATIONS: 'pollinations',
+    WEBLLM: 'webllm',
 };
 
 const character_names_behavior = {
@@ -274,6 +276,7 @@ export const settingsToUpdate = {
     zerooneai_model: ['#model_01ai_select', 'zerooneai_model', false, true],
     xai_model: ['#model_xai_select', 'xai_model', false, true],
     pollinations_model: ['#model_pollinations_select', 'pollinations_model', false, true],
+    webllm_model: ['#model_webllm_select', 'webllm_model', false, true],
     custom_model: ['#custom_model_id', 'custom_model', false, true],
     custom_url: ['#custom_api_url_text', 'custom_url', false, true],
     custom_include_body: ['#custom_include_body', 'custom_include_body', false, true],
@@ -370,6 +373,7 @@ const default_settings = {
     aimlapi_model: 'gpt-4o-mini-2024-07-18',
     xai_model: 'grok-3-beta',
     pollinations_model: 'openai',
+    webllm_model: '',
     custom_model: '',
     custom_url: '',
     custom_include_body: '',
@@ -457,6 +461,7 @@ const oai_settings = {
     aimlapi_model: 'gpt-4-turbo',
     xai_model: 'grok-3-beta',
     pollinations_model: 'openai',
+    webllm_model: '',
     custom_model: '',
     custom_url: '',
     custom_include_body: '',
@@ -515,6 +520,8 @@ export let openai_settings;
 
 /** @type {import('./PromptManager.js').PromptManager} */
 export let promptManager = null;
+
+let webllmEngine;
 
 async function validateReverseProxy() {
     if (!oai_settings.reverse_proxy) {
@@ -1619,6 +1626,8 @@ export function getChatCompletionModel(source = null) {
             return oai_settings.xai_model;
         case chat_completion_sources.POLLINATIONS:
             return oai_settings.pollinations_model;
+        case chat_completion_sources.WEBLLM:
+            return oai_settings.webllm_model;
         default:
             console.error(`Unknown chat completion source: ${activeSource}`);
             return '';
@@ -2270,6 +2279,14 @@ async function sendOpenAIRequest(type, messages, signal, { jsonSchema = null } =
     if (isOAI && /^(o1|o3|o4)/.test(oai_settings.openai_model)) {
         generate_data.max_completion_tokens = generate_data.max_tokens;
         delete generate_data.max_tokens;
+    }
+
+    if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
+        if (!webllmEngine) {
+            webllmEngine = new WebLLMEngineWrapper();
+        }
+        await webllmEngine.loadModel(oai_settings.webllm_model);
+        return webllmEngine.generateChatStream(messages, generate_data);
         delete generate_data.logprobs;
         delete generate_data.top_logprobs;
         delete generate_data.stop;
@@ -3627,6 +3644,29 @@ function setContinuePostfixControls() {
 }
 
 async function getStatusOpen() {
+    if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
+        if (!webllmEngine) {
+            webllmEngine = new WebLLMEngineWrapper();
+        }
+        const models = webllmEngine.getModels();
+        const select = $('#model_webllm_select');
+        select.empty();
+        for (const model of models) {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.text = model.toString();
+            select.append(option);
+        }
+        if (oai_settings.webllm_model) {
+            select.val(oai_settings.webllm_model);
+        } else if (models.length > 0) {
+            oai_settings.webllm_model = models[0].id;
+            select.val(models[0].id);
+        }
+        setOnlineStatus('Valid');
+        return resultCheckStatus();
+    }
+
     const noValidateSources = [
         chat_completion_sources.CLAUDE,
         chat_completion_sources.AI21,
@@ -4575,6 +4615,11 @@ async function onModelChange() {
         oai_settings.pollinations_model = value;
     }
 
+    if (value && $(this).is('#model_webllm_select')) {
+        console.log('WebLLM model changed to', value);
+        oai_settings.webllm_model = value;
+    }
+
     if ($(this).is('#model_aimlapi_select')) {
         if (!value) {
             console.debug('Null AI/ML model selected. Ignoring.');
@@ -5180,6 +5225,9 @@ function toggleChatCompletionForms() {
     }
     else if (oai_settings.chat_completion_source == chat_completion_sources.XAI) {
         $('#model_xai_select').trigger('change');
+    }
+    else if (oai_settings.chat_completion_source == chat_completion_sources.WEBLLM) {
+        $('#model_webllm_select').trigger('change');
     }
     else if (oai_settings.chat_completion_source == chat_completion_sources.POLLINATIONS) {
         $('#model_pollinations_select').trigger('change');
@@ -6128,4 +6176,6 @@ export function initOpenAI() {
     $('#openai_proxy_password_show').on('click', onProxyPasswordShowClick);
     $('#customize_additional_parameters').on('click', onCustomizeParametersClick);
     $('#openai_proxy_preset').on('change', onProxyPresetChange);
+
+    $('#model_webllm_select').on('change', onModelChange);
 }

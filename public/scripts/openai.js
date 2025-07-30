@@ -373,7 +373,7 @@ const default_settings = {
     aimlapi_model: 'gpt-4o-mini-2024-07-18',
     xai_model: 'grok-3-beta',
     pollinations_model: 'openai',
-    webllm_model: '',
+    webllm_model: 'SmolLM-135M-Instruct-q0f16-MLC',
     custom_model: '',
     custom_url: '',
     custom_include_body: '',
@@ -461,7 +461,7 @@ const oai_settings = {
     aimlapi_model: 'gpt-4-turbo',
     xai_model: 'grok-3-beta',
     pollinations_model: 'openai',
-    webllm_model: '',
+    webllm_model: 'SmolLM-135M-Instruct-q0f16-MLC',
     custom_model: '',
     custom_url: '',
     custom_include_body: '',
@@ -2282,11 +2282,6 @@ async function sendOpenAIRequest(type, messages, signal, { jsonSchema = null } =
     }
 
     if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
-        if (!webllmEngine) {
-            webllmEngine = new WebLLMEngineWrapper();
-        }
-        await webllmEngine.loadModel(oai_settings.webllm_model);
-        return webllmEngine.generateChatStream(messages, generate_data);
         delete generate_data.logprobs;
         delete generate_data.top_logprobs;
         delete generate_data.stop;
@@ -2295,15 +2290,13 @@ async function sendOpenAIRequest(type, messages, signal, { jsonSchema = null } =
         delete generate_data.top_p;
         delete generate_data.frequency_penalty;
         delete generate_data.presence_penalty;
-        if (oai_settings.openai_model.startsWith('o1')) {
-            generate_data.messages.forEach((msg) => {
-                if (msg.role === 'system') {
-                    msg.role = 'user';
-                }
-            });
-            delete generate_data.n;
-            delete generate_data.tools;
-            delete generate_data.tool_choice;
+
+        return async function* streamData() {
+            if (!webllmEngine) {
+                webllmEngine = new WebLLMEngineWrapper();
+            }
+            await webllmEngine.loadModel(oai_settings.webllm_model);
+            yield* webllmEngine.generateChatStream(messages, generate_data);
         }
     }
 

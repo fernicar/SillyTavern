@@ -523,6 +523,31 @@ export let promptManager = null;
 
 let webllmEngine;
 
+function populateWebLLMModels() {
+    if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
+        if (!webllmEngine) {
+            webllmEngine = new WebLLMEngineWrapper();
+        }
+        const models = webllmEngine.getModels();
+        const select = $('#model_webllm_select');
+        select.empty();
+        for (const model of models) {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.text = model.toString();
+            select.append(option);
+        }
+        if (oai_settings.webllm_model) {
+            select.val(oai_settings.webllm_model);
+        } else if (models.length > 0) {
+            oai_settings.webllm_model = models[0].id;
+            select.val(models[0].id);
+        }
+        setOnlineStatus('Valid');
+        resultCheckStatus();
+    }
+}
+
 async function validateReverseProxy() {
     if (!oai_settings.reverse_proxy) {
         return;
@@ -3640,26 +3665,8 @@ function setContinuePostfixControls() {
 
 async function getStatusOpen() {
     if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
-        if (!webllmEngine) {
-            webllmEngine = new WebLLMEngineWrapper();
-        }
-        const models = webllmEngine.getModels();
-        const select = $('#model_webllm_select');
-        select.empty();
-        for (const model of models) {
-            const option = document.createElement('option');
-            option.value = model.id;
-            option.text = model.toString();
-            select.append(option);
-        }
-        if (oai_settings.webllm_model) {
-            select.val(oai_settings.webllm_model);
-        } else if (models.length > 0) {
-            oai_settings.webllm_model = models[0].id;
-            select.val(models[0].id);
-        }
-        setOnlineStatus('Valid');
-        return resultCheckStatus();
+        populateWebLLMModels();
+        return;
     }
 
     const noValidateSources = [
@@ -5222,6 +5229,7 @@ function toggleChatCompletionForms() {
         $('#model_xai_select').trigger('change');
     }
     else if (oai_settings.chat_completion_source == chat_completion_sources.WEBLLM) {
+        populateWebLLMModels();
         $('#model_webllm_select').trigger('change');
     }
     else if (oai_settings.chat_completion_source == chat_completion_sources.POLLINATIONS) {
@@ -6173,4 +6181,6 @@ export function initOpenAI() {
     $('#openai_proxy_preset').on('change', onProxyPresetChange);
 
     $('#model_webllm_select').on('change', onModelChange);
+
+    populateWebLLMModels();
 }

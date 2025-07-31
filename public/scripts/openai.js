@@ -73,8 +73,6 @@ import { SlashCommandEnumValue } from './slash-commands/SlashCommandEnumValue.js
 import { callGenericPopup, Popup, POPUP_RESULT, POPUP_TYPE } from './popup.js';
 import { t } from './i18n.js';
 import { ToolManager } from './tool-calling.js';
-import { getModels as getWebLLMModels, loadModel as loadWebLLMModel, generateChatStream as generateWebLLMChatStream } from './webllm.js';
-import { isWebLlmSupported } from './extensions/shared.js';
 import { accountStorage } from './util/AccountStorage.js';
 import { IGNORE_SYMBOL } from './constants.js';
 
@@ -186,7 +184,6 @@ export const chat_completion_sources = {
     AIMLAPI: 'aimlapi',
     XAI: 'xai',
     POLLINATIONS: 'pollinations',
-    WEBLLM: 'webllm',
 };
 
 const character_names_behavior = {
@@ -277,7 +274,6 @@ export const settingsToUpdate = {
     zerooneai_model: ['#model_01ai_select', 'zerooneai_model', false, true],
     xai_model: ['#model_xai_select', 'xai_model', false, true],
     pollinations_model: ['#model_pollinations_select', 'pollinations_model', false, true],
-    webllm_model: ['#model_webllm_select', 'webllm_model', false, true],
     custom_model: ['#custom_model_id', 'custom_model', false, true],
     custom_url: ['#custom_api_url_text', 'custom_url', false, true],
     custom_include_body: ['#custom_include_body', 'custom_include_body', false, true],
@@ -374,7 +370,6 @@ const default_settings = {
     aimlapi_model: 'gpt-4o-mini-2024-07-18',
     xai_model: 'grok-3-beta',
     pollinations_model: 'openai',
-    webllm_model: 'SmolLM-135M-Instruct-q0f16-MLC',
     custom_model: '',
     custom_url: '',
     custom_include_body: '',
@@ -462,7 +457,6 @@ const oai_settings = {
     aimlapi_model: 'gpt-4-turbo',
     xai_model: 'grok-3-beta',
     pollinations_model: 'openai',
-    webllm_model: 'SmolLM-135M-Instruct-q0f16-MLC',
     custom_model: '',
     custom_url: '',
     custom_include_body: '',
@@ -521,31 +515,6 @@ export let openai_settings;
 
 /** @type {import('./PromptManager.js').PromptManager} */
 export let promptManager = null;
-
-function populateWebLLMModels() {
-    if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
-        if (!isWebLlmSupported()) {
-            return;
-        }
-        const models = getWebLLMModels();
-        const select = $('#model_webllm_select');
-        select.empty();
-        for (const model of models) {
-            const option = document.createElement('option');
-            option.value = model.id;
-            option.text = model.toString();
-            select.append(option);
-        }
-        if (oai_settings.webllm_model) {
-            select.val(oai_settings.webllm_model);
-        } else if (models.length > 0) {
-            oai_settings.webllm_model = models[0].id;
-            select.val(models[0].id);
-        }
-        setOnlineStatus('Valid');
-        resultCheckStatus();
-    }
-}
 
 async function validateReverseProxy() {
     if (!oai_settings.reverse_proxy) {
@@ -1650,8 +1619,6 @@ export function getChatCompletionModel(source = null) {
             return oai_settings.xai_model;
         case chat_completion_sources.POLLINATIONS:
             return oai_settings.pollinations_model;
-        case chat_completion_sources.WEBLLM:
-            return oai_settings.webllm_model;
         default:
             console.error(`Unknown chat completion source: ${activeSource}`);
             return '';
@@ -2303,9 +2270,6 @@ async function sendOpenAIRequest(type, messages, signal, { jsonSchema = null } =
     if (isOAI && /^(o1|o3|o4)/.test(oai_settings.openai_model)) {
         generate_data.max_completion_tokens = generate_data.max_tokens;
         delete generate_data.max_tokens;
-    }
-
-    if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
         delete generate_data.logprobs;
         delete generate_data.top_logprobs;
         delete generate_data.stop;
@@ -2314,13 +2278,15 @@ async function sendOpenAIRequest(type, messages, signal, { jsonSchema = null } =
         delete generate_data.top_p;
         delete generate_data.frequency_penalty;
         delete generate_data.presence_penalty;
-
-        return async function* streamData() {
-            if (!isWebLlmSupported()) {
-                throw new Error('WebLLM is not supported.');
-            }
-            await loadWebLLMModel(oai_settings.webllm_model);
-            yield* generateWebLLMChatStream(messages, generate_data);
+        if (oai_settings.openai_model.startsWith('o1')) {
+            generate_data.messages.forEach((msg) => {
+                if (msg.role === 'system') {
+                    msg.role = 'user';
+                }
+            });
+            delete generate_data.n;
+            delete generate_data.tools;
+            delete generate_data.tool_choice;
         }
     }
 
@@ -3661,11 +3627,6 @@ function setContinuePostfixControls() {
 }
 
 async function getStatusOpen() {
-    if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
-        populateWebLLMModels();
-        return;
-    }
-
     const noValidateSources = [
         chat_completion_sources.CLAUDE,
         chat_completion_sources.AI21,
@@ -4614,11 +4575,6 @@ async function onModelChange() {
         oai_settings.pollinations_model = value;
     }
 
-    if (value && $(this).is('#model_webllm_select')) {
-        console.log('WebLLM model changed to', value);
-        oai_settings.webllm_model = value;
-    }
-
     if ($(this).is('#model_aimlapi_select')) {
         if (!value) {
             console.debug('Null AI/ML model selected. Ignoring.');
@@ -5225,12 +5181,11 @@ function toggleChatCompletionForms() {
     else if (oai_settings.chat_completion_source == chat_completion_sources.XAI) {
         $('#model_xai_select').trigger('change');
     }
-    else if (oai_settings.chat_completion_source == chat_completion_sources.WEBLLM) {
-        populateWebLLMModels();
-        $('#model_webllm_select').trigger('change');
-    }
     else if (oai_settings.chat_completion_source == chat_completion_sources.POLLINATIONS) {
         $('#model_pollinations_select').trigger('change');
+    }
+    else if (oai_settings.chat_completion_source == chat_completion_sources.WEBLLM) {
+        $('#model_webllm_select').trigger('change');
     }
     $('[data-source]').each(function () {
         const validSources = $(this).data('source').split(',');
@@ -6176,8 +6131,4 @@ export function initOpenAI() {
     $('#openai_proxy_password_show').on('click', onProxyPasswordShowClick);
     $('#customize_additional_parameters').on('click', onCustomizeParametersClick);
     $('#openai_proxy_preset').on('change', onProxyPresetChange);
-
-    $('#model_webllm_select').on('change', onModelChange);
-
-    populateWebLLMModels();
 }

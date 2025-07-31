@@ -2299,6 +2299,10 @@ async function sendOpenAIRequest(type, messages, signal, { jsonSchema = null } =
         generate_data['seed'] = oai_settings.seed;
     }
 
+    if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
+        return generateWebLLMChatStream(messages, generate_data);
+    }
+
     if (isOAI && /^(o1|o3|o4)/.test(oai_settings.openai_model)) {
         generate_data.max_completion_tokens = generate_data.max_tokens;
         delete generate_data.max_tokens;

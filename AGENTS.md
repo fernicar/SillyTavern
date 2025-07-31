@@ -44,4 +44,15 @@ Providers are managed in `public/scripts/openai.js`. The `chat_completion_source
 - [x] Correct quote in error message in `public/scripts/openai.js`.
 - [x] Add `webllm` case to `/generate` endpoint in `src/endpoints/backends/chat-completions.js`.
 
+**Notes on `generateChatPrompt` and `generateChatStream`:**
+
+*   **`generateChatPrompt`**: This function is designed for non-streaming responses. It takes an array of messages and returns a single string with the complete response. It's an `async` function that internally handles locking to prevent concurrent requests.
+*   **`generateChatStream`**: This function is for streaming responses. It's an `async` generator function that yields partial responses as they are generated. It also handles locking. The yielded objects have the shape `{ text: string, swipes: any[], logprobs: null }`.
+
+**Plan to fix the streaming and response generation:**
+
+1.  **Modify `public/scripts/openai.js`:**
+    *   In the `sendOpenAIRequest` function, when the `chat_completion_source` is `webllm`, call `generateChatStream` instead of `generateChatPrompt`.
+    *   The `sendOpenAIRequest` function should return an `async` generator that yields the responses from `generateChatStream` in the correct format.
+
 keep this document updated each time you commit.

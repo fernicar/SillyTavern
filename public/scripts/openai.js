@@ -32,9 +32,7 @@ import {
 } from '../script.js';
 import { getGroupNames, selected_group } from './group-chats.js';
 import { isWebLlmSupported } from './extensions/shared.js';
-import { getWebLLMModels } from './webllm.js';
-import { isWebLlmSupported } from './extensions/shared.js';
-import { getWebLLMModels, loadModel as loadWebLLMModel, generateChatStream as generateWebLLMChatStream } from './webllm.js';
+import { getModels as getWebLLMModels, loadModel as loadWebLLMModel, generateChatStream as generateWebLLMChatStream } from './webllm.js';
 
 import {
     chatCompletionDefaultPrompts,
@@ -1654,7 +1652,7 @@ export function getChatCompletionModel(source = null) {
         case chat_completion_sources.WEBLLM:
             return oai_settings.webllm_model;
         default:
-            console.error(`This chat completion source is not supported yet.`);
+            console.error('This chat completion source is not supported yet.');
             return '';
     }
 }

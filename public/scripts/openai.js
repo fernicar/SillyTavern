@@ -31,6 +31,10 @@ import {
     this_chid,
 } from '../script.js';
 import { getGroupNames, selected_group } from './group-chats.js';
+import { isWebLlmSupported } from './extensions/shared.js';
+import { getWebLLMModels } from './webllm.js';
+import { isWebLlmSupported } from './extensions/shared.js';
+import { getWebLLMModels, loadModel as loadWebLLMModel, generateChatStream as generateWebLLMChatStream } from './webllm.js';
 
 import {
     chatCompletionDefaultPrompts,

@@ -30,16 +30,18 @@ Providers are managed in `public/scripts/openai.js`. The `chat_completion_source
 *   **Alternatives**: A better approach would be to check for the existence of the `SillyTavern.llm` object. If it exists, use it. If not, then fall back to creating a new engine instance. This would make the native provider compatible with the WebLLM extension and avoid conflicts.
 *   **Warnings**: The current approach can lead to multiple WebLLM instances running, which can cause performance issues and unexpected behavior. It also doesn't leverage the existing WebLLM extension's capabilities, such as its model management.
 
-**Plan to fix the missing model list:**
+**Implementation Checklist:**
 
-1.  **Modify `public/scripts/openai.js`:**
-    *   In the `initOpenAI` function, add a call to a new function `populateWebLLMModels()` when the `chat_completion_source` is `webllm`.
-    *   Create the `populateWebLLMModels` function. This function will:
-        *   Check if WebLLM is supported using `isWebLlmSupported()`.
-        *   Get the list of available WebLLM models using `getWebLLMModels()` from `webllm.js`.
-        *   Populate the `#model_webllm_select` dropdown with the models.
-        *   Set the online status to "Valid" and call `resultCheckStatus()` to enable the chat.
-2.  **Modify `src/endpoints/backends/chat-completions.js`:**
-    *   Add a case for `webllm` in the main `router.post('/generate', ...)` function to handle WebLLM requests. Since WebLLM is a client-side provider, this case should probably just return an error or a message indicating that the request should be handled on the client.
+- [x] Add `WEBLLM` to `CHAT_COMPLETION_SOURCES` in `src/constants.js`.
+- [x] Add `webllm_model` to `settingsToUpdate` in `public/scripts/openai.js`.
+- [x] Add `webllm_model` to `default_settings` in `public/scripts/openai.js`.
+- [x] Add `webllm_model` to `oai_settings` in `public/scripts/openai.js`.
+- [x] Add `webllm` case to `getChatCompletionModel` in `public/scripts/openai.js`.
+- [x] Add `populateWebLLMModels` function to `public/scripts/openai.js`.
+- [x] Add call to `populateWebLLMModels` in `toggleChatCompletionForms` in `public/scripts/openai.js`.
+- [x] Add `webllm` case to `/status` endpoint in `src/endpoints/backends/chat-completions.js`.
+- [x] Add import for `getWebLLMModels` in `public/scripts/openai.js`.
+- [x] Correct quote in error message in `public/scripts/openai.js`.
+- [x] Add `webllm` case to `/generate` endpoint in `src/endpoints/backends/chat-completions.js`.
 
 keep this document updated each time you commit.

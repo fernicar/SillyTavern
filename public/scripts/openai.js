@@ -276,7 +276,7 @@ export const settingsToUpdate = {
     zerooneai_model: ['#model_01ai_select', 'zerooneai_model', false, true],
     xai_model: ['#model_xai_select', 'xai_model', false, true],
     pollinations_model: ['#model_pollinations_select', 'pollinations_model', false, true],
-    webllm_model: ['#model_webllm_select', 'webllm_model', false, true],
+    webllm_model: ['#webllm_model_select', 'webllm_model', false, true],
     custom_model: ['#custom_model_id', 'custom_model', false, true],
     custom_url: ['#custom_api_url_text', 'custom_url', false, true],
     custom_include_body: ['#custom_include_body', 'custom_include_body', false, true],

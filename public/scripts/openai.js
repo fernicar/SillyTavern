@@ -1644,8 +1644,10 @@ export function getChatCompletionModel(source = null) {
             return oai_settings.xai_model;
         case chat_completion_sources.POLLINATIONS:
             return oai_settings.pollinations_model;
+        case chat_completion_sources.WEBLLM:
+            return oai_settings.webllm_model;
         default:
-            console.error(`Unknown chat completion source: ${activeSource}`);
+            console.error(`This chat completion source is not supported yet.`);
             return '';
     }
 }

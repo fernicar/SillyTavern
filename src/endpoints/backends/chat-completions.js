@@ -1438,6 +1438,7 @@ router.post('/generate', function (request, response) {
     }
 
     switch (request.body.chat_completion_source) {
+        case CHAT_COMPLETION_SOURCES.WEBLLM: return response.status(400).send({ error: 'WebLLM is a client-side provider and should not be called from the backend.' });
         case CHAT_COMPLETION_SOURCES.CLAUDE: return sendClaudeRequest(request, response);
         case CHAT_COMPLETION_SOURCES.AI21: return sendAI21Request(request, response);
         case CHAT_COMPLETION_SOURCES.MAKERSUITE: return sendMakerSuiteRequest(request, response);

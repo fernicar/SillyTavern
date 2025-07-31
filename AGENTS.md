@@ -39,5 +39,7 @@ Providers are managed in `public/scripts/openai.js`. The `chat_completion_source
         *   Get the list of available WebLLM models using `getWebLLMModels()` from `webllm.js`.
         *   Populate the `#model_webllm_select` dropdown with the models.
         *   Set the online status to "Valid" and call `resultCheckStatus()` to enable the chat.
+2.  **Modify `src/endpoints/backends/chat-completions.js`:**
+    *   Add a case for `webllm` in the main `router.post('/generate', ...)` function to handle WebLLM requests. Since WebLLM is a client-side provider, this case should probably just return an error or a message indicating that the request should be handled on the client.
 
 keep this document updated each time you commit.

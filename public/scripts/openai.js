@@ -5651,30 +5651,6 @@ function updateVertexAIServiceAccountStatus(isValid = false, message = '') {
 
 
 
-function populateWebLLMModels() {
-    if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
-        if (!isWebLlmSupported()) {
-            return;
-        }
-        const models = getWebLLMModels();
-        const select = $('#webllm_model_select');
-        select.empty();
-        for (const model of models) {
-            const option = document.createElement('option');
-            option.value = model.id;
-            option.text = model.toString();
-            select.append(option);
-        }
-        if (oai_settings.webllm_model) {
-            select.val(oai_settings.webllm_model);
-        } else if (models.length > 0) {
-            oai_settings.webllm_model = models[0].id;
-            select.val(models[0].id);
-        }
-        setOnlineStatus('Valid');
-        resultCheckStatus();
-    }
-}
 export function initOpenAI() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'proxy',

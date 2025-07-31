@@ -5214,9 +5214,8 @@ function toggleChatCompletionForms() {
         $('#model_pollinations_select').trigger('change');
     }
     else if (oai_settings.chat_completion_source == chat_completion_sources.WEBLLM) {
+        populateWebLLMModels();
         $('#model_webllm_select').trigger('change');
-
-    populateWebLLMModels();
     }
     $('[data-source]').each(function () {
         const validSources = $(this).data('source').split(',');

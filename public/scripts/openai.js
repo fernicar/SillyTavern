@@ -274,6 +274,7 @@ export const settingsToUpdate = {
     zerooneai_model: ['#model_01ai_select', 'zerooneai_model', false, true],
     xai_model: ['#model_xai_select', 'xai_model', false, true],
     pollinations_model: ['#model_pollinations_select', 'pollinations_model', false, true],
+    webllm_model: ['#model_webllm_select', 'webllm_model', false, true],
     custom_model: ['#custom_model_id', 'custom_model', false, true],
     custom_url: ['#custom_api_url_text', 'custom_url', false, true],
     custom_include_body: ['#custom_include_body', 'custom_include_body', false, true],
@@ -370,6 +371,7 @@ const default_settings = {
     aimlapi_model: 'gpt-4o-mini-2024-07-18',
     xai_model: 'grok-3-beta',
     pollinations_model: 'openai',
+    webllm_model: 'SmolLM-135M-Instruct-q0f16-MLC',
     custom_model: '',
     custom_url: '',
     custom_include_body: '',
@@ -457,6 +459,7 @@ const oai_settings = {
     aimlapi_model: 'gpt-4-turbo',
     xai_model: 'grok-3-beta',
     pollinations_model: 'openai',
+    webllm_model: 'SmolLM-135M-Instruct-q0f16-MLC',
     custom_model: '',
     custom_url: '',
     custom_include_body: '',
@@ -3395,6 +3398,7 @@ function loadOpenAISettings(data, settings) {
     oai_settings.zerooneai_model = settings.zerooneai_model ?? default_settings.zerooneai_model;
     oai_settings.xai_model = settings.xai_model ?? default_settings.xai_model;
     oai_settings.pollinations_model = settings.pollinations_model ?? default_settings.pollinations_model;
+    oai_settings.webllm_model = settings.webllm_model ?? default_settings.webllm_model;
     oai_settings.custom_model = settings.custom_model ?? default_settings.custom_model;
     oai_settings.custom_url = settings.custom_url ?? default_settings.custom_url;
     oai_settings.custom_include_body = settings.custom_include_body ?? default_settings.custom_include_body;
@@ -3493,6 +3497,8 @@ function loadOpenAISettings(data, settings) {
     $(`#model_xai_select option[value="${oai_settings.xai_model}"`).prop('selected', true);
     $('#model_pollinations_select').val(oai_settings.pollinations_model);
     $(`#model_pollinations_select option[value="${oai_settings.pollinations_model}"`).prop('selected', true);
+    $('#model_webllm_select').val(oai_settings.webllm_model);
+    $(`#model_webllm_select option[value="${oai_settings.webllm_model}"`).prop('selected', true);
     $('#custom_model_id').val(oai_settings.custom_model);
     $('#custom_api_url_text').val(oai_settings.custom_url);
     $('#openai_max_context').val(oai_settings.openai_max_context);
@@ -3752,6 +3758,7 @@ async function getStatusOpen() {
 async function saveOpenAIPreset(name, settings, triggerUi = true) {
     const presetBody = {
         chat_completion_source: settings.chat_completion_source,
+        webllm_model: settings.webllm_model,
         openai_model: settings.openai_model,
         claude_model: settings.claude_model,
         openrouter_model: settings.openrouter_model,
@@ -4604,6 +4611,11 @@ async function onModelChange() {
     if (value && $(this).is('#model_pollinations_select')) {
         console.log('Pollinations model changed to', value);
         oai_settings.pollinations_model = value;
+    }
+
+    if (value && $(this).is('#model_webllm_select')) {
+        console.log('WebLLM model changed to', value);
+        oai_settings.webllm_model = value;
     }
 
     if ($(this).is('#model_aimlapi_select')) {

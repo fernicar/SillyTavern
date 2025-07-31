@@ -516,6 +516,31 @@ export let openai_settings;
 /** @type {import('./PromptManager.js').PromptManager} */
 export let promptManager = null;
 
+function populateWebLLMModels() {
+    if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
+        if (!isWebLlmSupported()) {
+            return;
+        }
+        const models = getWebLLMModels();
+        const select = $('#webllm_model_select');
+        select.empty();
+        for (const model of models) {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.text = model.toString();
+            select.append(option);
+        }
+        if (oai_settings.webllm_model) {
+            select.val(oai_settings.webllm_model);
+        } else if (models.length > 0) {
+            oai_settings.webllm_model = models[0].id;
+            select.val(models[0].id);
+        }
+        setOnlineStatus('Valid');
+        resultCheckStatus();
+    }
+}
+
 async function validateReverseProxy() {
     if (!oai_settings.reverse_proxy) {
         return;
@@ -3627,6 +3652,10 @@ function setContinuePostfixControls() {
 }
 
 async function getStatusOpen() {
+    if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
+        populateWebLLMModels();
+        return;
+    }
     const noValidateSources = [
         chat_completion_sources.CLAUDE,
         chat_completion_sources.AI21,
@@ -5186,6 +5215,8 @@ function toggleChatCompletionForms() {
     }
     else if (oai_settings.chat_completion_source == chat_completion_sources.WEBLLM) {
         $('#model_webllm_select').trigger('change');
+
+    populateWebLLMModels();
     }
     $('[data-source]').each(function () {
         const validSources = $(this).data('source').split(',');
@@ -5620,6 +5651,30 @@ function updateVertexAIServiceAccountStatus(isValid = false, message = '') {
 
 
 
+function populateWebLLMModels() {
+    if (oai_settings.chat_completion_source === chat_completion_sources.WEBLLM) {
+        if (!isWebLlmSupported()) {
+            return;
+        }
+        const models = getWebLLMModels();
+        const select = $('#webllm_model_select');
+        select.empty();
+        for (const model of models) {
+            const option = document.createElement('option');
+            option.value = model.id;
+            option.text = model.toString();
+            select.append(option);
+        }
+        if (oai_settings.webllm_model) {
+            select.val(oai_settings.webllm_model);
+        } else if (models.length > 0) {
+            oai_settings.webllm_model = models[0].id;
+            select.val(models[0].id);
+        }
+        setOnlineStatus('Valid');
+        resultCheckStatus();
+    }
+}
 export function initOpenAI() {
     SlashCommandParser.addCommandObject(SlashCommand.fromProps({
         name: 'proxy',
@@ -6115,6 +6170,7 @@ export function initOpenAI() {
     $('#model_custom_select').on('change', onModelChange);
     $('#model_xai_select').on('change', onModelChange);
     $('#model_pollinations_select').on('change', onModelChange);
+    $('#model_webllm_select').on('change', onModelChange);
     $('#settings_preset_openai').on('change', onSettingsPresetChange);
     $('#new_oai_preset').on('click', onNewPresetClick);
     $('#delete_oai_preset').on('click', onDeletePresetClick);

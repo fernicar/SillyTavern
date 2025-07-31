@@ -30,4 +30,14 @@ Providers are managed in `public/scripts/openai.js`. The `chat_completion_source
 *   **Alternatives**: A better approach would be to check for the existence of the `SillyTavern.llm` object. If it exists, use it. If not, then fall back to creating a new engine instance. This would make the native provider compatible with the WebLLM extension and avoid conflicts.
 *   **Warnings**: The current approach can lead to multiple WebLLM instances running, which can cause performance issues and unexpected behavior. It also doesn't leverage the existing WebLLM extension's capabilities, such as its model management.
 
+**Plan to fix the missing model list:**
+
+1.  **Modify `public/scripts/openai.js`:**
+    *   In the `initOpenAI` function, add a call to a new function `populateWebLLMModels()` when the `chat_completion_source` is `webllm`.
+    *   Create the `populateWebLLMModels` function. This function will:
+        *   Check if WebLLM is supported using `isWebLlmSupported()`.
+        *   Get the list of available WebLLM models using `getWebLLMModels()` from `webllm.js`.
+        *   Populate the `#model_webllm_select` dropdown with the models.
+        *   Set the online status to "Valid" and call `resultCheckStatus()` to enable the chat.
+
 keep this document updated each time you commit.

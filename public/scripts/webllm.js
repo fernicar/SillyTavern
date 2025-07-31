@@ -1,14 +1,20 @@
 import { isWebLlmSupported } from './extensions/shared.js';
+import { WebLLMEngineWrapper } from '../../data/default-user/extensions/Extension-WebLLM/src/index.js';
+
+let localWebLLM;
 
 /**
  * Get the WebLLM engine.
  * @returns {Promise<any>} The WebLLM engine.
  */
 async function getEngine() {
-    if (!isWebLlmSupported()) {
-        throw new Error('WebLLM is not supported.');
+    if (isWebLlmSupported()) {
+        return SillyTavern.llm.getEngine();
     }
-    return SillyTavern.llm.getEngine();
+    if (!localWebLLM) {
+        localWebLLM = new WebLLMEngineWrapper();
+    }
+    return localWebLLM;
 }
 
 /**
@@ -16,10 +22,13 @@ async function getEngine() {
  * @returns {{id:string, toString: function(): string}[]} The list of models.
  */
 export function getModels() {
-    if (!isWebLlmSupported()) {
-        return [];
+    if (isWebLlmSupported()) {
+        return SillyTavern.llm.getModels();
     }
-    return SillyTavern.llm.getChatModels();
+    if (!localWebLLM) {
+        localWebLLM = new WebLLMEngineWrapper();
+    }
+    return localWebLLM.getModels();
 }
 
 /**

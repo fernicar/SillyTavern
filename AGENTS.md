@@ -55,4 +55,23 @@ Providers are managed in `public/scripts/openai.js`. The `chat_completion_source
     *   In the `sendOpenAIRequest` function, when the `chat_completion_source` is `webllm`, call `generateChatStream` instead of `generateChatPrompt`.
     *   The `sendOpenAIRequest` function should return an `async` generator that yields the responses from `generateChatStream` in the correct format.
 
+**Further Research on `WebLLMEngineWrapper`:**
+
+*   **`getModels()` vs `getChatModels()`**: The `WebLLMEngineWrapper` class in the extension has a `getModels()` method, not `getChatModels()`. I need to correct this in my `public/scripts/webllm.js` implementation.
+*   **`isWebLlmSupported()`**: This function checks for the existence of `SillyTavern.llm`. If it exists, it means the WebLLM extension is active. My implementation should use this to decide whether to use the extension's engine or create a new one.
+*   **`WebLLMEngineWrapper` Import**: I need to import the `WebLLMEngineWrapper` class into `public/scripts/webllm.js` so I can instantiate it when the extension is not present.
+
+**Revised Plan:**
+
+1.  **Modify `public/scripts/webllm.js`:**
+    *   Import the `WebLLMEngineWrapper` class from `../../data/default-user/extensions/Extension-WebLLM/src/index.js`.
+    *   In the `getEngine` function, check if `isWebLlmSupported()` is true.
+        *   If true, return `SillyTavern.llm.getEngine()`.
+        *   If false, create a new instance of `WebLLMEngineWrapper` and return it.
+    *   In the `getModels` function, check if `isWebLlmSupported()` is true.
+        *   If true, return `SillyTavern.llm.getModels()`.
+        *   If false, call the `getModels()` method of the locally created `WebLLMEngineWrapper` instance.
+2.  **Modify `public/scripts/openai.js`:**
+    *   Ensure that the `getWebLLMModels` function is correctly imported and used.
+
 keep this document updated each time you commit.
